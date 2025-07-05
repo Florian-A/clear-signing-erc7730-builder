@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import SampleAddressAbiCard from "./sampleAddressAbiCard";
 import { Button } from "~/components/ui/button";
 import { Upload } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 
 import { ZodError } from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ import { useToast } from "~/hooks/use-toast";
 const CardErc7730 = () => {
   const [input, setInput] = useState("");
   const [inputType, setInputType] = useState<"address" | "abi" | "import">("address");
+  const [selectedChainId, setSelectedChainId] = useState<number>(1); // Ethereum par défaut
   const { setErc7730 } = useErc7730Store((state) => state);
   const router = useRouter();
   const { toast } = useToast();
@@ -40,6 +42,7 @@ const CardErc7730 = () => {
       return generateFromERC7730({
         input,
         inputType: validInputType,
+        chainId: selectedChainId,
       });
     },
   });
@@ -127,6 +130,18 @@ const CardErc7730 = () => {
       />
       
       <form onSubmit={handleSubmit} className="mb-4 flex w-full flex-col gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="network-select">Réseau</Label>
+          <Select value={selectedChainId.toString()} onValueChange={(value) => setSelectedChainId(Number(value))}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Sélectionner un réseau" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Ethereum (Mainnet)</SelectItem>
+              <SelectItem value="11155111">Sepolia (Testnet)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Tabs defaultValue="address" onValueChange={onTabChange}>
           <TabsList className="mb-10 grid w-full grid-cols-3">
             <TabsTrigger value="address">Contract Address</TabsTrigger>
