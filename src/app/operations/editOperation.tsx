@@ -18,6 +18,7 @@ import FieldForm from "./fieldForm";
 import useOperationStore from "~/store/useOperationStore";
 import { Slash } from "lucide-react";
 import { SidebarSeparator } from "~/components/ui/sidebar";
+import { Button } from "~/components/ui/button";
 
 const FieldParams = z.union([
   DateFieldFormSchema,
@@ -83,6 +84,8 @@ const EditOperation = ({ selectedOperation }: Props) => {
     (state) => state.setUpdatedOperation,
   );
 
+  const generatedErc7730 = useErc7730Store((s) => s.generatedErc7730);
+
   const form = useForm<OperationFormType>({
     resolver: zodResolver(OperationFormSchema),
     mode: "onChange",
@@ -96,6 +99,10 @@ const EditOperation = ({ selectedOperation }: Props) => {
 
   const formSteps = watch("fields").map((field) => field.path);
   const [step, setStep] = useState("intent");
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [errorAI, setErrorAI] = useState<string | null>(null);
+
+  const operations = useErc7730Store((s) => s.generatedErc7730?.display?.formats ?? {});
 
   useEffect(() => {
     if (!operationToEdit) return;
@@ -153,10 +160,57 @@ const EditOperation = ({ selectedOperation }: Props) => {
     );
   }
 
+  async function handleAICompletion() {
+    setLoadingAI(true);
+    setErrorAI(null);
+    try {
+      const abi = generatedErc7730?.context && 'contract' in generatedErc7730.context ? generatedErc7730.context.contract.abi : undefined;
+      const response = await fetch("/api/ai-completion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ operation: operationToEdit, abi }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Erreur inconnue");
+      if (!data.result) throw new Error("Réponse IA vide");
+      form.reset(data.result);
+    } catch (e: any) {
+      setErrorAI(e.message);
+    } finally {
+      setLoadingAI(false);
+    }
+  }
+
+  // Complétion IA pour toutes les opérations
+  async function handleAICompletionAll() {
+    setLoadingAI(true);
+    setErrorAI(null);
+    try {
+      const abi = generatedErc7730?.context && 'contract' in generatedErc7730.context ? generatedErc7730.context.contract.abi : undefined;
+      const opNames = Object.keys(operations);
+      for (const opName of opNames) {
+        const op = operations[opName];
+        const response = await fetch("/api/ai-completion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ operation: op, abi }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Erreur inconnue pour " + opName);
+        if (!data.result) throw new Error("Réponse IA vide pour " + opName);
+        setOperationData(opName, data.result, removeExcludedFields(data.result));
+      }
+    } catch (e: any) {
+      setErrorAI(e.message);
+    } finally {
+      setLoadingAI(false);
+    }
+  }
+
   return (
     <>
       <div className="mb-4 flex w-full items-center justify-between">
-        <h1 className="text-2xl font-bold">{selectedOperation}</h1>
+        <h2 className="text-xl font-bold">{selectedOperation}</h2>
       </div>
       <Form {...form}>
         <form
