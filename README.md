@@ -2,6 +2,35 @@
 
 This project as to goal to build an erc7730 json for clear signing
 
+## Nouvelles fonctionnalités
+
+### Génération automatique de Pull Request
+
+Le projet inclut maintenant une fonctionnalité pour générer automatiquement une Pull Request sur le repository [LedgerHQ/clear-signing-erc7730-registry](https://github.com/LedgerHQ/clear-signing-erc7730-registry).
+
+#### Configuration requise
+
+Pour utiliser cette fonctionnalité, vous devez configurer l'authentification GitHub OAuth :
+
+1. Créez une application OAuth GitHub sur [GitHub Settings > Developer settings > OAuth Apps](https://github.com/settings/developers)
+2. Configurez l'URL de callback : `http://localhost:3000/api/github/auth/callback` (développement) ou votre domaine de production
+3. Ajoutez les variables d'environnement dans votre fichier `.env.local` :
+   ```
+   GITHUB_CLIENT_ID=your_github_oauth_client_id
+   GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+   ```
+
+#### Utilisation
+
+1. Générez votre JSON ERC7730 dans l'application
+2. Allez dans la section "Review"
+3. Connectez-vous avec votre compte GitHub en cliquant sur "Se connecter"
+4. Une fois connecté, cliquez sur le bouton "Générer une PR" à côté du bouton "Copy JSON to Clipboard"
+5. Le système créera automatiquement :
+   - Une nouvelle branche `add-test-json`
+   - Un fichier `test.json` dans le dossier `registry/`
+   - Une Pull Request au nom de votre compte GitHub pour fusionner ces changements
+
 # How It Works
 
 ## python api
