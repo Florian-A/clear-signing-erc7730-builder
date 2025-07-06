@@ -22,6 +22,7 @@ export interface Erc7730Store {
     operationData: Operation,
     filteredOperationData: Operation,
   ) => void;
+  isMetadataValid: () => boolean;
 }
 
 export const createErc7730Store = () => {
@@ -160,6 +161,25 @@ export const createErc7730Store = () => {
                 : { formats: {} },
             },
           })),
+        isMetadataValid: () => {
+          const { generatedErc7730 } = get();
+          if (!generatedErc7730?.metadata) return false;
+          
+          const metadata = generatedErc7730.metadata;
+          const context = generatedErc7730.context;
+          
+          // Vérifier que tous les champs requis sont remplis
+          return !!(
+            metadata.owner &&
+            metadata.owner.trim() !== "" &&
+            metadata.info?.legalName &&
+            metadata.info.legalName.trim() !== "" &&
+            metadata.info?.url &&
+            metadata.info.url.trim() !== "" &&
+            context.$id &&
+            context.$id.trim() !== ""
+          );
+        },
       }),
 
       {

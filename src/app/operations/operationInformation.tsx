@@ -25,7 +25,7 @@ const OperationInformation = ({ form, onContinue }: Props) => {
   const { intent } = form.watch();
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 min-[1000px]:grid-cols-2">
       <div>
         <Card className="h-fit p-6">
           <FormField
@@ -49,7 +49,7 @@ const OperationInformation = ({ form, onContinue }: Props) => {
           Continue
         </Button>
       </div>
-      <div className="hidden justify-center md:flex">
+      <div className="hidden justify-center min-[1000px]:flex">
         <Device.Frame size="normal">
           <div className="flex h-full w-full flex-col justify-between text-black antialiased">
             <div className="overflow-hidden break-words px-2 pt-16">

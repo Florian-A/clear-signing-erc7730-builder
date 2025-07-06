@@ -19,7 +19,7 @@ const ResetButton = () => {
   };
 
   return (
-    <Button variant={"outline"} className="rounded-full" onClick={reset}>
+    <Button variant={"outline"} onClick={reset}>
       <RotateCcw /> Reset
     </Button>
   );

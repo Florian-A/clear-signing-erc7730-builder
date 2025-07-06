@@ -49,15 +49,17 @@ export const Device = {
   Frame: ({
     children,
     size = "normal",
+    alwaysVisible = false,
   }: {
     children: ReactNode;
     size?: "small" | "medium" | "normal";
+    alwaysVisible?: boolean;
   }) => {
     const isStax = false;
     const Component = isStax ? Stax : Flex;
 
     return (
-      <Component.Bezel size={size}>
+      <Component.Bezel size={size} alwaysVisible={alwaysVisible}>
         <div
           className={cn(
             "flex w-full flex-col justify-between text-black antialiased",

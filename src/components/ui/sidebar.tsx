@@ -527,6 +527,7 @@ const sidebarMenuButtonVariants = cva(
         default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+        validated: "bg-green-100/90 text-[#6EB260]/90 dark:bg-green-100/10 hover:bg-green-100/90 hover:text-[#6EB260]/90 dark:hover:bg-green-100/10 px-3 py-5",
       },
       size: {
         default: "h-8 text-sm",
@@ -546,6 +547,7 @@ const SidebarMenuButton = React.forwardRef<
   React.ComponentProps<"button"> & {
     asChild?: boolean;
     isActive?: boolean;
+    isValidated?: boolean;
     tooltip?: string | React.ComponentProps<typeof TooltipContent>;
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
@@ -553,6 +555,7 @@ const SidebarMenuButton = React.forwardRef<
     {
       asChild = false,
       isActive = false,
+      isValidated = false,
       variant = "default",
       size = "default",
       tooltip,
@@ -570,7 +573,10 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(sidebarMenuButtonVariants({ 
+          variant: isValidated ? "validated" : variant, 
+          size 
+        }), className)}
         {...props}
       />
     );
