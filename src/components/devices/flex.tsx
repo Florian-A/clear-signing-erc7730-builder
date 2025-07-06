@@ -12,12 +12,15 @@ export const Flex = {
   Bezel: ({
     children,
     size,
+    alwaysVisible = false,
   }: {
     children: ReactNode;
     size: "small" | "medium" | "normal";
+    alwaysVisible?: boolean;
   }) => (
     <div
       className={cn(
+        alwaysVisible ? "block" : "hidden min-[1000px]:block",
         "h-[416.5px] w-[301.5px] bg-[url(/assets/DeviceBezel-Flex.png)] bg-contain bg-no-repeat p-[29.5px]",
         size === "medium" && "h-[312px] w-[226px] p-[22px]",
         size === "small" && "h-[41.6px] w-[30.1px] p-0",

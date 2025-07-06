@@ -110,14 +110,15 @@ const MetadataForm = () => {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="grid grid-cols-2 gap-10"
+          className="grid grid-cols-1 min-[1170px]:grid-cols-2 gap-10"
         >
           <div>
-            <div className="mb-20 flex w-full items-center justify-between">
+            <div className="mb-6 flex w-full items-center justify-between">
               <h1 className="text-2xl font-bold">Metadata</h1>
             </div>
+            <div data-orientation="horizontal" role="none" className="shrink-0 h-[1px] mx-2 w-auto bg-sidebar-border mb-10" data-sidebar="separator"></div>
 
-            <Card className="mb-40 flex h-fit flex-col gap-6 p-6">
+            <Card className="mb-6 flex h-fit flex-col gap-6 p-6">
               <FormField
                 control={form.control}
                 name="owner"
@@ -182,7 +183,7 @@ const MetadataForm = () => {
             </div>
           </div>
           {metadata && (
-            <div className="hidden flex-row justify-between lg:flex">
+            <div className="hidden flex-row justify-between min-[1170px]:flex">
               <Devices
                 metadata={metadata}
                 address={address}

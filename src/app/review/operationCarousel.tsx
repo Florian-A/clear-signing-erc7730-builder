@@ -61,7 +61,7 @@ const OperationCarousel = () => {
               key={index}
               className="flex w-full items-center justify-center"
             >
-              <Device.Frame>{screen}</Device.Frame>
+              <Device.Frame alwaysVisible>{screen}</Device.Frame>
             </CarouselItem>
           ))}
         </CarouselContent>
@@ -77,7 +77,7 @@ const OperationCarousel = () => {
             })}
             onClick={() => api?.scrollTo(index)}
           >
-            <Device.Frame size="small">{index + 1}</Device.Frame>
+            <Device.Frame size="small" alwaysVisible>{index + 1}</Device.Frame>
           </div>
         ))}
       </div>
