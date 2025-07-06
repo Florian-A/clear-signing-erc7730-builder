@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4-turbo',
+        model: 'gpt-4.1-mini',
         messages: [
           { role: 'system', content: 'You are an expert assistant in smart contracts and the ERC-7730 standard.' },
           { role: 'user', content: `${prompt}\n\nFor each field, if it is missing, empty, or incomplete, suggest a plausible value based on the ABI and the ERC-7730 standard. Do not leave any field empty. Return only the final JSON, with no explanation.` },

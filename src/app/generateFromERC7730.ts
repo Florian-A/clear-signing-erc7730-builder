@@ -8,13 +8,16 @@ export type GenerateResponse =
 export default async function generateERC7730({
   input,
   inputType,
+  chainId,
 }: {
   inputType: "address" | "abi";
   input: string;
+  chainId: number;
 }): Promise<GenerateResponse | null> {
   const body: GenerateBody = {
     address: inputType === "address" ? input : undefined,
     abi: inputType === "abi" ? input : undefined,
+    chain_id: chainId,
   };
 
   const response = await fetch("/api/py/generateERC7730", {

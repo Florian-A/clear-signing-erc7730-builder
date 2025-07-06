@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import SampleAddressAbiCard from "./sampleAddressAbiCard";
 import { Button } from "~/components/ui/button";
 import { Upload } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 
 import { ZodError } from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ import { useToast } from "~/hooks/use-toast";
 const CardErc7730 = () => {
   const [input, setInput] = useState("");
   const [inputType, setInputType] = useState<"address" | "abi" | "import">("address");
+  const [selectedChainId, setSelectedChainId] = useState<number>(1); // Ethereum par défaut
   const { setErc7730 } = useErc7730Store((state) => state);
   const router = useRouter();
   const { toast } = useToast();
@@ -40,6 +42,7 @@ const CardErc7730 = () => {
       return generateFromERC7730({
         input,
         inputType: validInputType,
+        chainId: selectedChainId,
       });
     },
   });
@@ -136,6 +139,30 @@ const CardErc7730 = () => {
           <TabsContent value="address">
             <div className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="network-select">Network</Label>
+                <Select value={selectedChainId.toString()} onValueChange={(value) => setSelectedChainId(Number(value))}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select a network" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Ethereum (Mainnet)</SelectItem>
+                    <SelectItem value="11155111">Ethereum Sepolia (Testnet)</SelectItem>
+                    <SelectItem value="56">BNB Chain</SelectItem>
+                    <SelectItem value="97">BNB Chain (Testnet)</SelectItem>
+                    <SelectItem value="8453">Base</SelectItem>
+                    <SelectItem value="84531">Base Sepolia (Testnet)</SelectItem>
+                    <SelectItem value="42161">Arbitrum</SelectItem>
+                    <SelectItem value="421613">Arbitrum Sepolia (Testnet)</SelectItem>
+                    <SelectItem value="43114">Avalanche</SelectItem>
+                    <SelectItem value="43113">Avalanche Fuji (Testnet)</SelectItem>
+                    <SelectItem value="137">Polygon</SelectItem>
+                    <SelectItem value="80001">Polygon Mumbai (Testnet)</SelectItem>
+                    <SelectItem value="10">Optimism</SelectItem>
+                    <SelectItem value="11155420">Optimism Sepolia (Testnet)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="eth-address">Contract Address</Label>
                 <Input
                   id="contract-address"
@@ -166,7 +193,7 @@ const CardErc7730 = () => {
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-6 text-center">
                   <Upload className="mb-4 h-8 w-8 text-gray-400" />
                   <p className="mb-2 text-sm text-gray-600">
-                    Sélectionnez un fichier JSON ERC7730 précédemment exporté
+                    Select a previously exported ERC7730 JSON file
                   </p>
                   <Button 
                     type="button"
@@ -175,7 +202,7 @@ const CardErc7730 = () => {
                     className="flex items-center gap-2"
                   >
                     <Upload className="h-4 w-4" />
-                    Choisir un fichier
+                    Choose a file
                   </Button>
                 </div>
               </div>
