@@ -49,7 +49,7 @@ const SelectOperation = () => {
               <div className="text-sm/6">
                 <Label
                   htmlFor={operationName}
-                  className={cn("cursor-pointer font-semibold")}
+                  className={cn("cursor-pointer font-normal")}
                 >
                   {operationName}
                 </Label>

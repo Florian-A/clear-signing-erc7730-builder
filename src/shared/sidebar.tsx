@@ -22,7 +22,7 @@ import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 
 export function AppSidebar() {
-  const { getContractAddress } = useErc7730Store((s) => s);
+  const { getContractAddress, isMetadataValid } = useErc7730Store((s) => s);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -144,7 +144,10 @@ export function AppSidebar() {
           <>
             <SidebarGroup>
               <SidebarMenu>
-                <SidebarMenuButton onClick={() => router.push("/metadata")}>
+                <SidebarMenuButton 
+                  onClick={() => router.push("/metadata")}
+                  isValidated={isMetadataValid()}
+                >
                   Metadata
                 </SidebarMenuButton>
               </SidebarMenu>
