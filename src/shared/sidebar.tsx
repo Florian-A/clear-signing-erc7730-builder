@@ -41,11 +41,22 @@ export function AppSidebar() {
   const setContractId = useErc7730Store((s) => s.setContractId);
   const [loadingAI, setLoadingAI] = useState(false);
   const [errorAI, setErrorAI] = useState<string | null>(null);
+  const [currentOperationIndex, setCurrentOperationIndex] = useState(0);
+  const [totalOperations, setTotalOperations] = useState(0);
+  const [shouldStop, setShouldStop] = useState(false);
 
   // Complétion IA pour toutes les opérations et métadonnées
   async function handleAICompletionAll() {
+    if (loadingAI) {
+      // Si déjà en cours, arrêter le processus
+      setShouldStop(true);
+      return;
+    }
+
     setLoadingAI(true);
     setErrorAI(null);
+    setShouldStop(false);
+    
     try {
       const abi = generatedErc7730?.context && 'contract' in generatedErc7730.context ? generatedErc7730.context.contract.abi : undefined;
       
@@ -54,70 +65,89 @@ export function AppSidebar() {
         return;
       }
 
-      // 1. Compléter les métadonnées d'abord
-      const currentMetadata = {
-        owner: "",
-        info: {
-          legalName: "",
-          url: "",
-        },
-        context: {
-          $id: "",
-        },
-      };
+      // Sur la page metadata, ne remplir que les métadonnées
+      if (pathname === "/metadata") {
+        const currentMetadata = {
+          owner: "",
+          info: {
+            legalName: "",
+            url: "",
+          },
+          context: {
+            $id: "",
+          },
+        };
 
-      try {
-        const metadataResponse = await fetch("/api/ai-completion", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            metadata: currentMetadata, 
-            abi,
-            type: "metadata"
-          }),
-        });
-        
-        const metadataData = await metadataResponse.json();
-        if (metadataResponse.ok && metadataData.result) {
-          // Mettre à jour les métadonnées dans le store
-          setMetadata({
-            owner: metadataData.result.owner || "",
-            info: {
-              legalName: metadataData.result.info?.legalName || "",
-              url: metadataData.result.info?.url || "",
-            },
+        try {
+          const metadataResponse = await fetch("/api/ai-completion", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              metadata: currentMetadata, 
+              abi,
+              type: "metadata"
+            }),
           });
           
-          // Mettre à jour le contract ID
-          if (metadataData.result.context?.$id) {
-            setContractId(metadataData.result.context.$id);
+          const metadataData = await metadataResponse.json();
+          if (metadataResponse.ok && metadataData.result) {
+            // Mettre à jour les métadonnées dans le store
+            setMetadata({
+              owner: metadataData.result.owner || "",
+              info: {
+                legalName: metadataData.result.info?.legalName || "",
+                url: metadataData.result.info?.url || "",
+              },
+            });
+            
+            // Mettre à jour le contract ID
+            if (metadataData.result.context?.$id) {
+              setContractId(metadataData.result.context.$id);
+            }
+            
+            console.log("Metadata completed:", metadataData.result);
+          }
+        } catch (metadataError) {
+          console.warn("Metadata completion failed:", metadataError);
+          setErrorAI("Failed to complete metadata");
+        }
+      } else {
+        // Sur la page operations, remplir toutes les opérations
+        const opNames = Object.keys(operations).filter((name): name is string => !!name);
+        setTotalOperations(opNames.length);
+        setCurrentOperationIndex(0);
+        
+        for (let i = 0; i < opNames.length; i++) {
+          if (shouldStop) {
+            console.log("AI completion stopped by user");
+            break;
           }
           
-          console.log("Metadata completed:", metadataData.result);
+          const opName = opNames[i];
+          if (!opName) continue;
+          const op = operations[opName as keyof typeof operations];
+          if (!op) continue;
+          
+          setCurrentOperationIndex(i + 1);
+          
+          const response = await fetch("/api/ai-completion", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ operation: op, abi }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Unknown error for " + opName);
+          if (!data.result) throw new Error("Empty AI response for " + opName);
+          setOperationData(opName, data.result, data.result);
         }
-      } catch (metadataError) {
-        console.warn("Metadata completion failed:", metadataError);
-        // Continuer avec les opérations même si les métadonnées échouent
-      }
-
-      // 2. Compléter toutes les opérations
-      const opNames = Object.keys(operations);
-      for (const opName of opNames) {
-        const op = operations[opName];
-        const response = await fetch("/api/ai-completion", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ operation: op, abi }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Unknown error for " + opName);
-        if (!data.result) throw new Error("Empty AI response for " + opName);
-        setOperationData(opName, data.result, data.result);
       }
     } catch (e: any) {
       setErrorAI(e.message);
     } finally {
       setLoadingAI(false);
+      setCurrentOperationIndex(0);
+      setTotalOperations(0);
+      setShouldStop(false);
     }
   }
 
@@ -170,14 +200,19 @@ export function AppSidebar() {
           <div className="flex flex-row items-center gap-2 w-full">
             <Button
               onClick={handleAICompletionAll}
-              disabled={loadingAI || Object.keys(operations).length === 0}
+              disabled={pathname === "/operations" && Object.keys(operations).length === 0}
               variant="outline"
               className="flex-1 flex items-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               {loadingAI ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Waiting ...
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {pathname === "/operations" && currentOperationIndex > 0 && totalOperations > 0 ? (
+                    `${currentOperationIndex}/${totalOperations}`
+                  ) : (
+                    "Processing..."
+                  )}
                 </>
               ) : (
                 "AI Autofill"

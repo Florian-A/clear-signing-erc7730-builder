@@ -87,6 +87,8 @@ const MetadataForm = () => {
     }
   }, [metadata, router, hasHydrated, form]);
 
+
+
   const onSubmit = (
     data: MetadataFormType & { contractName: Erc7730["context"]["$id"] },
   ) => {

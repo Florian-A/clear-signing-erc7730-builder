@@ -45,8 +45,8 @@ const SelectOperation = () => {
                 "bg-green-100/90 text-[#6EB260]/90 dark:bg-green-100/10",
             )}
           >
-            <div className="flex w-full items-center justify-between">
-              <div className="text-sm/6">
+            <div className="flex w-full items-center justify-start">
+              <div className="text-sm/6 text-left">
                 <Label
                   htmlFor={operationName}
                   className={cn("cursor-pointer font-normal")}

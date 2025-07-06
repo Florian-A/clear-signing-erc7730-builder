@@ -229,22 +229,24 @@ const CardErc7730 = () => {
         </Card>
       </form>
 
-      {inputType !== "import" && (
-        <SampleAddressAbiCard setInput={setInput} inputType={inputType as "address" | "abi"} />
-      )}
-
       {error && (
-        <Card>
+        <Card className="mt-4 mb-5 bg-yellow-50 border-yellow-200">
           <CardHeader>
-            <CardTitle>Error</CardTitle>
+            <CardTitle className="text-yellow-800">Error</CardTitle>
           </CardHeader>
           <CardContent>
-            {error instanceof ZodError
-              ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                JSON.parse(error.message)[0].message
-              : error.message}
+            <div className="text-yellow-700">
+              {error instanceof ZodError
+                ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                  JSON.parse(error.message)[0].message
+                : error.message}
+            </div>
           </CardContent>
         </Card>
+      )}
+
+      {inputType !== "import" && (
+        <SampleAddressAbiCard setInput={setInput} inputType={inputType as "address" | "abi"} />
       )}
     </div>
   );
