@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 
 import { useState, useRef } from "react";
@@ -130,90 +130,103 @@ const CardErc7730 = () => {
       />
       
       <form onSubmit={handleSubmit} className="mb-4 flex w-full flex-col gap-4">
-        <Tabs defaultValue="address" onValueChange={onTabChange}>
-          <TabsList className="mb-10 grid w-full grid-cols-3">
-            <TabsTrigger value="address">Contract Address</TabsTrigger>
-            <TabsTrigger value="abi">ABI</TabsTrigger>
-            <TabsTrigger value="import">Import JSON</TabsTrigger>
-          </TabsList>
-          <TabsContent value="address">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="network-select">Network</Label>
-                <Select value={selectedChainId.toString()} onValueChange={(value) => setSelectedChainId(Number(value))}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select a network" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Ethereum (Mainnet)</SelectItem>
-                    <SelectItem value="11155111">Ethereum Sepolia (Testnet)</SelectItem>
-                    <SelectItem value="56">BNB Chain</SelectItem>
-                    <SelectItem value="97">BNB Chain (Testnet)</SelectItem>
-                    <SelectItem value="8453">Base</SelectItem>
-                    <SelectItem value="84531">Base Sepolia (Testnet)</SelectItem>
-                    <SelectItem value="42161">Arbitrum</SelectItem>
-                    <SelectItem value="421613">Arbitrum Sepolia (Testnet)</SelectItem>
-                    <SelectItem value="43114">Avalanche</SelectItem>
-                    <SelectItem value="43113">Avalanche Fuji (Testnet)</SelectItem>
-                    <SelectItem value="137">Polygon</SelectItem>
-                    <SelectItem value="80001">Polygon Mumbai (Testnet)</SelectItem>
-                    <SelectItem value="10">Optimism</SelectItem>
-                    <SelectItem value="11155420">Optimism Sepolia (Testnet)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="eth-address">Contract Address</Label>
-                <Input
-                  id="contract-address"
-                  placeholder="0x..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                />
-              </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="abi">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="abi">ABI</Label>
-                <Textarea
-                  id="abi"
-                  placeholder="Paste your ABI here..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                />
-              </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="import">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Import JSON ERC7730</Label>
-                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-6 text-center">
-                  <Upload className="mb-4 h-8 w-8 text-gray-400" />
-                  <p className="mb-2 text-sm text-gray-600">
-                    Select a previously exported ERC7730 JSON file
-                  </p>
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    onClick={handleImportClick}
-                    className="flex items-center gap-2"
-                  >
-                    <Upload className="h-4 w-4" />
-                    Choose a file
-                  </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle>Contract Information</CardTitle>
+            <CardDescription>Enter your contract address, ABI, or import an existing ERC7730 JSON file</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="address" onValueChange={onTabChange}>
+              <TabsList className="mb-6 grid w-full grid-cols-3">
+                <TabsTrigger value="address">Contract Address</TabsTrigger>
+                <TabsTrigger value="abi">ABI</TabsTrigger>
+                <TabsTrigger value="import">Import JSON</TabsTrigger>
+              </TabsList>
+              <TabsContent value="address">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="network-select">Network</Label>
+                    <Select value={selectedChainId.toString()} onValueChange={(value) => setSelectedChainId(Number(value))}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Select a network" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Ethereum (Mainnet)</SelectItem>
+                        <SelectItem value="11155111">Ethereum Sepolia (Testnet)</SelectItem>
+                        <SelectItem value="56">BNB Chain</SelectItem>
+                        <SelectItem value="97">BNB Chain (Testnet)</SelectItem>
+                        <SelectItem value="8453">Base</SelectItem>
+                        <SelectItem value="84531">Base Sepolia (Testnet)</SelectItem>
+                        <SelectItem value="42161">Arbitrum</SelectItem>
+                        <SelectItem value="421613">Arbitrum Sepolia (Testnet)</SelectItem>
+                        <SelectItem value="43114">Avalanche</SelectItem>
+                        <SelectItem value="43113">Avalanche Fuji (Testnet)</SelectItem>
+                        <SelectItem value="137">Polygon</SelectItem>
+                        <SelectItem value="80001">Polygon Mumbai (Testnet)</SelectItem>
+                        <SelectItem value="10">Optimism</SelectItem>
+                        <SelectItem value="11155420">Optimism Sepolia (Testnet)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="eth-address">Contract Address</Label>
+                    <Input
+                      id="contract-address"
+                      placeholder="0x..."
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                    />
+                  </div>
+                  {inputType === "address" && (
+                    <Button type="submit" disabled={loading} className="w-full">
+                      Submit
+                    </Button>
+                  )}
                 </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-        {inputType !== "import" && (
-          <Button type="submit" disabled={loading}>
-            Submit
-          </Button>
-        )}
+              </TabsContent>
+              <TabsContent value="abi">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="abi">ABI</Label>
+                    <Textarea
+                      id="abi"
+                      placeholder="Paste your ABI here..."
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                    />
+                  </div>
+                  {inputType === "abi" && (
+                    <Button type="submit" disabled={loading} className="w-full">
+                      Submit
+                    </Button>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="import">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Import JSON ERC7730</Label>
+                    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-6 text-center">
+                      <Upload className="mb-4 h-8 w-8 text-gray-400" />
+                      <p className="mb-2 text-sm text-gray-600">
+                        Select a previously exported ERC7730 JSON file
+                      </p>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        onClick={handleImportClick}
+                        className="flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Choose a file
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </form>
 
       {inputType !== "import" && (

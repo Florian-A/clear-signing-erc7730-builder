@@ -187,7 +187,6 @@ export function AppSidebar() {
           {errorAI && <div className="text-red-500 mb-2">AI error: {errorAI}</div>}
           <ResetButton />
           <Button
-            className="rounded-full"
             disabled={!isReviewAccessible}
             onClick={() => router.push("/review")}
           >
