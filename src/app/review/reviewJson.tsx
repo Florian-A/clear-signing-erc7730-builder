@@ -29,6 +29,42 @@ export function ReviewJson() {
     });
   };
 
+  const handleDownloadJSON = () => {
+    if (!erc7730) return;
+    
+    // Generate filename using the same logic as the PR creation
+    const owner = erc7730.metadata?.owner;
+    const contextId = erc7730.context?.$id;
+    
+    if (!owner || !contextId) {
+      toast({
+        title: "Error",
+        description: "Missing metadata.owner or context.$id in JSON data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Convert to lowercase and replace spaces with hyphens
+    const ownerPath = owner.toLowerCase().replace(/\s+/g, '-');
+    const idPath = contextId.toLowerCase().replace(/\s+/g, '-');
+    const filename = `${ownerPath}-${idPath}.json`;
+    
+    const blob = new Blob([JSON.stringify(erc7730, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "JSON downloaded!",
+    });
+  };
+
   const handleGeneratePR = async () => {
     if (!erc7730) {
       toast({
@@ -166,7 +202,7 @@ export function ReviewJson() {
             ) : (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  Connect to GitHub to create a PR
+                                     Connect to GitHub to create a pull request on Clear Signing ERC7730 repository.
                 </p>
                 <Button
                   onClick={login}
@@ -182,8 +218,11 @@ export function ReviewJson() {
         <pre className="max-h-64 overflow-auto rounded border bg-gray-100 p-4 text-sm dark:text-black">
           {JSON.stringify(erc7730, null, 2)}
         </pre>
-        <div className="flex gap-2">
-          <Button onClick={handleCopyToClipboard}>Copy JSON to Clipboard</Button>
+        <div className="flex justify-between gap-2">
+          <div className="flex gap-2">
+            <Button onClick={handleCopyToClipboard}>Copy JSON to Clipboard</Button>
+            <Button onClick={handleDownloadJSON}>Download JSON</Button>
+          </div>
           <Button 
             onClick={handleGeneratePR} 
             disabled={isGeneratingPR || !authStatus.authenticated}
@@ -192,10 +231,10 @@ export function ReviewJson() {
             {isGeneratingPR ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating PR...
+                Generating Pull Request...
               </>
             ) : (
-              "Generate PR"
+              "Generate Pull Request"
             )}
           </Button>
         </div>
