@@ -171,8 +171,8 @@ const EditOperation = ({ selectedOperation }: Props) => {
         body: JSON.stringify({ operation: operationToEdit, abi }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Erreur inconnue");
-      if (!data.result) throw new Error("Réponse IA vide");
+      if (!response.ok) throw new Error(data.error || "Unknown error");
+      if (!data.result) throw new Error("Empty AI response");
       form.reset(data.result);
     } catch (e: any) {
       setErrorAI(e.message);
@@ -196,8 +196,8 @@ const EditOperation = ({ selectedOperation }: Props) => {
           body: JSON.stringify({ operation: op, abi }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Erreur inconnue pour " + opName);
-        if (!data.result) throw new Error("Réponse IA vide pour " + opName);
+        if (!response.ok) throw new Error(data.error || "Unknown error for " + opName);
+        if (!data.result) throw new Error("Empty AI response for " + opName);
         setOperationData(opName, data.result, removeExcludedFields(data.result));
       }
     } catch (e: any) {
