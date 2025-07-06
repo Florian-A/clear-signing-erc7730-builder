@@ -37,15 +37,70 @@ export function AppSidebar() {
   const generatedErc7730 = useErc7730Store((s) => s.generatedErc7730);
   const operations = useErc7730Store((s) => s.generatedErc7730?.display?.formats ?? {});
   const setOperationData = useErc7730Store((s) => s.setOperationData);
+  const setMetadata = useErc7730Store((s) => s.setMetadata);
+  const setContractId = useErc7730Store((s) => s.setContractId);
   const [loadingAI, setLoadingAI] = useState(false);
   const [errorAI, setErrorAI] = useState<string | null>(null);
 
-  // Complétion IA pour toutes les opérations
+  // Complétion IA pour toutes les opérations et métadonnées
   async function handleAICompletionAll() {
     setLoadingAI(true);
     setErrorAI(null);
     try {
       const abi = generatedErc7730?.context && 'contract' in generatedErc7730.context ? generatedErc7730.context.contract.abi : undefined;
+      
+      if (!abi) {
+        setErrorAI("No ABI available for AI completion");
+        return;
+      }
+
+      // 1. Compléter les métadonnées d'abord
+      const currentMetadata = {
+        owner: "",
+        info: {
+          legalName: "",
+          url: "",
+        },
+        context: {
+          $id: "",
+        },
+      };
+
+      try {
+        const metadataResponse = await fetch("/api/ai-completion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            metadata: currentMetadata, 
+            abi,
+            type: "metadata"
+          }),
+        });
+        
+        const metadataData = await metadataResponse.json();
+        if (metadataResponse.ok && metadataData.result) {
+          // Mettre à jour les métadonnées dans le store
+          setMetadata({
+            owner: metadataData.result.owner || "",
+            info: {
+              legalName: metadataData.result.info?.legalName || "",
+              url: metadataData.result.info?.url || "",
+            },
+          });
+          
+          // Mettre à jour le contract ID
+          if (metadataData.result.context?.$id) {
+            setContractId(metadataData.result.context.$id);
+          }
+          
+          console.log("Metadata completed:", metadataData.result);
+        }
+      } catch (metadataError) {
+        console.warn("Metadata completion failed:", metadataError);
+        // Continuer avec les opérations même si les métadonnées échouent
+      }
+
+      // 2. Compléter toutes les opérations
       const opNames = Object.keys(operations);
       for (const opName of opNames) {
         const op = operations[opName];
