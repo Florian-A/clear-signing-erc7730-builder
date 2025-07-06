@@ -1,70 +1,96 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "~/env.js";
+import { analyzeErc7730WithAI } from "~/lib/analyze-erc7730";
 
 const GITHUB_API_BASE = "https://api.github.com";
 const REPO_OWNER = "LedgerHQ";
 const REPO_NAME = "clear-signing-erc7730-registry";
-const BRANCH_NAME = "add-test-json";
-
-
 
 export async function POST(request: NextRequest) {
   try {
     const { jsonData } = await request.json();
 
-    // Récupérer le token d'accès de l'utilisateur connecté
+    // Get the access token of the connected user
     const accessToken = request.cookies.get("github_access_token")?.value;
     const userData = request.cookies.get("github_user")?.value;
 
     if (!accessToken || !userData) {
       return NextResponse.json(
-        { error: "Vous devez être connecté avec GitHub pour créer une PR" },
+        { error: "You must be connected to GitHub to create a PR" },
         { status: 401 }
       );
     }
 
     const user = JSON.parse(userData);
 
-    // 0. Vérifier les permissions de l'utilisateur
+    // Extract owner and ID from JSON data
+    const owner = jsonData.metadata?.owner;
+    const contextId = jsonData.context?.$id;
+    
+    if (!owner) {
+      return NextResponse.json(
+        { error: "Missing metadata.owner in JSON data" },
+        { status: 400 }
+      );
+    }
+    
+    if (!contextId) {
+      return NextResponse.json(
+        { error: "Missing context.$id in JSON data" },
+        { status: 400 }
+      );
+    }
+
+    // Convert to lowercase and replace spaces with hyphens
+    const ownerPath = owner.toLowerCase().replace(/\s+/g, '-');
+    const idPath = contextId.toLowerCase().replace(/\s+/g, '-');
+    const filePath = `registry/${ownerPath}/${idPath}.json`;
+
+    // Generate AI analysis
+    const aiAnalysis = await analyzeErc7730WithAI(jsonData);
+    console.log("AI Analysis completed");
+
+    // 0. Check user permissions
     console.log("Checking user permissions for repository...");
     const permissionsResponse = await fetch(
       `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}`,
       {
         headers: {
           Authorization: `token ${accessToken}`,
-          Accept: "application/vnd.github.v3+json",
         },
       }
     );
 
     if (!permissionsResponse.ok) {
-      const error = await permissionsResponse.text();
-      console.error("Repository access error:", error);
       return NextResponse.json(
-        { error: `Vous n'avez pas accès au repository ou il n'existe pas: ${error}` },
-        { status: 403 }
+        { error: "Failed to check repository permissions" },
+        { status: 500 }
       );
     }
 
     const repoData = await permissionsResponse.json();
-    console.log("Repository access successful:", { 
-      name: repoData.name, 
-      default_branch: repoData.default_branch,
-      permissions: repoData.permissions 
-    });
 
-    // Vérifier si l'utilisateur a les permissions push
+    // Function to generate a unique branch name
+    const generateBranchName = () => {
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 8);
+      return `add-${ownerPath}-${idPath}-${user.login}-${timestamp}-${random}`;
+    };
+
+    const branchName = generateBranchName();
+    console.log("Generated branch name:", branchName);
+
+    // Check if the user has push permissions
     if (!repoData.permissions.push) {
       console.log("User doesn't have push permissions, creating fork...");
       
-      // Créer un fork du repository
+      // Create a fork of the repository
       const forkResponse = await fetch(
         `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/forks`,
         {
           method: "POST",
           headers: {
             Authorization: `token ${accessToken}`,
-            Accept: "application/vnd.github.v3+json",
           },
         }
       );
@@ -73,7 +99,7 @@ export async function POST(request: NextRequest) {
         const error = await forkResponse.text();
         console.error("Failed to create fork:", error);
         return NextResponse.json(
-          { error: `Impossible de créer un fork du repository: ${error}` },
+          { error: `Unable to create repository fork: ${error}` },
           { status: 500 }
         );
       }
@@ -81,15 +107,15 @@ export async function POST(request: NextRequest) {
       const forkData = await forkResponse.json();
       console.log("Fork created successfully:", forkData.full_name);
       
-      // Utiliser le fork pour les opérations suivantes
+      // Use the fork for subsequent operations
       const forkOwner = forkData.owner.login;
       const forkName = forkData.name;
-      
-      // Attendre un peu que le fork soit prêt
+
+      // Wait a bit for the fork to be fully created
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // 1. Créer une branche dans le fork
-      console.log("Creating branch in fork:", BRANCH_NAME);
+      // 1. Create a branch in the fork
+      console.log("Creating branch in fork:", branchName);
       const defaultBranch = repoData.default_branch;
       console.log("Default branch:", defaultBranch);
       const mainBranchSha = await getMainBranchSha(accessToken, defaultBranch, forkOwner, forkName);
@@ -104,7 +130,7 @@ export async function POST(request: NextRequest) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            ref: `refs/heads/${BRANCH_NAME}`,
+            ref: `refs/heads/${branchName}`,
             sha: mainBranchSha,
           }),
         }
@@ -114,7 +140,7 @@ export async function POST(request: NextRequest) {
       
       if (!branchResponse.ok) {
         const error = await branchResponse.text();
-        console.error("Erreur lors de la création de la branche:", error);
+        console.error("Error creating branch:", error);
         return NextResponse.json(
           { error: `Failed to create branch: ${error}` },
           { status: 500 }
@@ -123,9 +149,9 @@ export async function POST(request: NextRequest) {
       
       console.log("Branch created successfully in fork");
       
-      // 2. Créer le fichier dans le fork
+      // 2. Create the file in the fork
       const fileResponse = await fetch(
-        `${GITHUB_API_BASE}/repos/${forkOwner}/${forkName}/contents/registry/test.json`,
+        `${GITHUB_API_BASE}/repos/${forkOwner}/${forkName}/contents/${filePath}`,
         {
           method: "PUT",
           headers: {
@@ -133,23 +159,23 @@ export async function POST(request: NextRequest) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            message: "Add test.json to registry",
+            message: `Add ${filePath} to registry`,
             content: Buffer.from(JSON.stringify(jsonData, null, 2)).toString("base64"),
-            branch: BRANCH_NAME,
+            branch: branchName,
           }),
         }
       );
 
       if (!fileResponse.ok) {
         const error = await fileResponse.text();
-        console.error("Erreur lors de la création du fichier:", error);
+        console.error("Error creating file:", error);
         return NextResponse.json(
           { error: "Failed to create file" },
           { status: 500 }
         );
       }
 
-      // 3. Créer la Pull Request depuis le fork vers le repository original
+      // 3. Create the Pull Request from the fork to the original repository
       const prResponse = await fetch(
         `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/pulls`,
         {
@@ -159,9 +185,9 @@ export async function POST(request: NextRequest) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            title: "Add test.json to registry",
-            body: `This PR adds a test.json file to the registry directory.\n\nSubmitted by: @${user.login}`,
-            head: `${forkOwner}:${BRANCH_NAME}`,
+            title: `Add ${filePath} to registry`,
+            body: `${aiAnalysis}\n\n_Generated with [ERC7730 JSON Builder](https://github.com/LedgerHQ/clear-signing-erc7730-builder)_`,
+            head: `${forkOwner}:${branchName}`,
             base: defaultBranch,
           }),
         }
@@ -169,7 +195,7 @@ export async function POST(request: NextRequest) {
 
       if (!prResponse.ok) {
         const error = await prResponse.text();
-        console.error("Erreur lors de la création de la PR:", error);
+        console.error("Error creating PR:", error);
         return NextResponse.json(
           { error: "Failed to create pull request" },
           { status: 500 }
@@ -185,11 +211,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Si l'utilisateur a les permissions push, utiliser le repository original
+    // If the user has push permissions, use the original repository
     console.log("User has push permissions, using original repository");
     
-    // 1. Obtenir la branche principale et créer une nouvelle branche
-    console.log("Creating branch:", BRANCH_NAME);
+    // 1. Get the main branch and create a new branch
+    console.log("Creating branch:", branchName);
     const defaultBranch = repoData.default_branch;
     console.log("Default branch:", defaultBranch);
     const mainBranchSha = await getMainBranchSha(accessToken, defaultBranch);
@@ -204,7 +230,7 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ref: `refs/heads/${BRANCH_NAME}`,
+          ref: `refs/heads/${branchName}`,
           sha: mainBranchSha,
         }),
       }
@@ -214,19 +240,18 @@ export async function POST(request: NextRequest) {
     
     if (!branchResponse.ok) {
       const error = await branchResponse.text();
-      console.error("Erreur lors de la création de la branche:", error);
-      console.error("Branch creation response headers:", Object.fromEntries(branchResponse.headers.entries()));
+      console.error("Error creating branch:", error);
       return NextResponse.json(
-        { error: `Failed to create branch: ${error}` },
+        { error: "Failed to create branch" },
         { status: 500 }
       );
     }
     
     console.log("Branch created successfully");
-
-    // 2. Créer le fichier test.json dans le dossier registry
+    
+    // 2. Create the file in the registry directory
     const fileResponse = await fetch(
-      `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/contents/registry/test.json`,
+      `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`,
       {
         method: "PUT",
         headers: {
@@ -234,23 +259,23 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: "Add test.json to registry",
+          message: `Add ${filePath} to registry`,
           content: Buffer.from(JSON.stringify(jsonData, null, 2)).toString("base64"),
-          branch: BRANCH_NAME,
+          branch: branchName,
         }),
       }
     );
 
     if (!fileResponse.ok) {
       const error = await fileResponse.text();
-      console.error("Erreur lors de la création du fichier:", error);
+      console.error("Error creating file:", error);
       return NextResponse.json(
         { error: "Failed to create file" },
         { status: 500 }
       );
     }
 
-    // 3. Créer la Pull Request
+    // 3. Create the Pull Request
     const prResponse = await fetch(
       `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/pulls`,
       {
@@ -260,9 +285,9 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title: "Add test.json to registry",
-          body: `This PR adds a test.json file to the registry directory.\n\nSubmitted by: @${user.login}`,
-          head: BRANCH_NAME,
+          title: `Add ${filePath} to registry`,
+          body: `This PR adds ${filePath} to the registry directory.\n\nSubmitted by: @${user.login}\n\n## Smart Contract Analysis\n\n${aiAnalysis}\n\n_Generated with [ERC7730 JSON Builder](https://github.com/LedgerHQ/clear-signing-erc7730-builder)_`,
+          head: branchName,
           base: defaultBranch,
         }),
       }
@@ -270,7 +295,7 @@ export async function POST(request: NextRequest) {
 
     if (!prResponse.ok) {
       const error = await prResponse.text();
-      console.error("Erreur lors de la création de la PR:", error);
+      console.error("Error creating PR:", error);
       return NextResponse.json(
         { error: "Failed to create pull request" },
         { status: 500 }
@@ -286,7 +311,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Erreur lors de la création de la PR:", error);
+    console.error("Error creating PR:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -31,13 +31,14 @@ export function useGitHubAuth() {
       console.log("Auth status response:", data);
       setAuthStatus(data);
     } catch (error) {
-      console.error("Erreur lors de la vérification du statut d'authentification:", error);
+      console.error("Error checking authentication status:", error);
+      setAuthStatus({ authenticated: false });
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Vérifier le statut d'authentification au chargement
+  // Check authentication status on load
   useEffect(() => {
     checkAuthStatus();
   }, [checkAuthStatus]);
@@ -51,7 +52,7 @@ export function useGitHubAuth() {
 
     if (error) {
       toast({
-        title: "Erreur d'authentification",
+        title: "Authentication Error",
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -61,12 +62,12 @@ export function useGitHubAuth() {
 
     if (success) {
       toast({
-        title: "Connexion réussie !",
-        description: "Vous êtes maintenant connecté avec GitHub.",
+        title: "Success",
+        description: "You are now connected with GitHub.",
       });
       // Nettoyer l'URL et recharger le statut
       router.replace("/review");
-      // Attendre un peu avant de vérifier le statut pour laisser le temps aux cookies d'être définis
+      // Wait a bit before checking the status to give cookies time to be set
       setTimeout(() => {
         checkAuthStatus();
       }, 1000);
@@ -80,38 +81,40 @@ export function useGitHubAuth() {
 
   const logout = async () => {
     try {
-      await fetch("/api/github/auth/logout", { method: "POST" });
-      setAuthStatus({ authenticated: false });
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté de GitHub.",
+      setLoading(true);
+      const response = await fetch('/api/github/auth/logout', {
+        method: 'POST',
       });
+
+      if (response.ok) {
+        setAuthStatus({ authenticated: false });
+        toast({
+          title: "Success",
+          description: "You have been logged out from GitHub.",
+        });
+      }
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
+      console.error("Error during logout:", error);
       toast({
-        title: "Erreur",
-        description: "Erreur lors de la déconnexion.",
+        title: "Error",
+        description: "Error during logout.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getErrorMessage = (error: string): string => {
+  const getErrorMessage = (error: string) => {
     switch (error) {
-      case "access_denied":
-        return "L'accès a été refusé. Veuillez autoriser l'application.";
-      case "invalid_state":
-        return "Erreur de sécurité. Veuillez réessayer.";
-      case "oauth_not_configured":
-        return "L'authentification GitHub n'est pas configurée.";
-      case "token_exchange_failed":
-        return "Erreur lors de l'échange du token. Veuillez réessayer.";
-      case "user_fetch_failed":
-        return "Erreur lors de la récupération des informations utilisateur.";
-      case "server_error":
-        return "Erreur serveur. Veuillez réessayer.";
+      case 'access_denied':
+        return "Access denied. Please try again.";
+      case 'server_error':
+        return "Server error. Please try again.";
+      case 'temporarily_unavailable':
+        return "Service temporarily unavailable. Please try again.";
       default:
-        return "Une erreur inattendue s'est produite.";
+        return "An unexpected error occurred.";
     }
   };
 

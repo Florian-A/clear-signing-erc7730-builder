@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   console.log("Callback - State:", state);
   console.log("Callback - Error:", error);
 
-  // Récupérer l'état stocké dans le cookie
+      // Retrieve the state stored in the cookie
   const storedState = request.cookies.get("github_oauth_state")?.value;
   const redirectUri = request.cookies.get("github_oauth_redirect")?.value || "/review";
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${request.nextUrl.origin}${redirectUri}?error=token_exchange_failed`);
     }
 
-    // Récupérer les informations de l'utilisateur
+    // Get user information
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
         Authorization: `token ${tokenData.access_token}`,
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${request.nextUrl.origin}${redirectUri}?error=user_fetch_failed`);
     }
 
-    // Créer la réponse de redirection
+    // Create the redirect response
     const response = NextResponse.redirect(`${request.nextUrl.origin}${redirectUri}?success=true`);
     
     // Nettoyer les cookies temporaires

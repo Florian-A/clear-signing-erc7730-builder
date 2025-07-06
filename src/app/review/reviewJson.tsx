@@ -32,8 +32,8 @@ export function ReviewJson() {
   const handleGeneratePR = async () => {
     if (!erc7730) {
       toast({
-        title: "Erreur",
-        description: "Aucun JSON à soumettre",
+        title: "Error",
+        description: "No JSON to submit",
         variant: "destructive",
       });
       return;
@@ -41,8 +41,8 @@ export function ReviewJson() {
 
     if (!authStatus.authenticated) {
       toast({
-        title: "Connexion requise",
-        description: "Vous devez être connecté avec GitHub pour créer une PR",
+        title: "Authentication required",
+        description: "Please connect to GitHub to generate a PR",
         variant: "destructive",
       });
       return;
@@ -64,29 +64,29 @@ export function ReviewJson() {
 
       if (response.ok && data.success) {
         toast({
-          title: "PR créée avec succès !",
+          title: "PR created successfully!",
           description: (
             <div>
-              <p>La Pull Request a été créée par @{authStatus.user?.login}.</p>
+              <p>The Pull Request was created by @{authStatus.user?.login}.</p>
               <a
                 href={data.pullRequestUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 underline"
               >
-                Voir la PR sur GitHub
+                View PR on GitHub
               </a>
             </div>
           ),
         });
       } else {
-        throw new Error(data.error || "Erreur lors de la création de la PR");
+        throw new Error(data.error || "Error creating PR");
       }
     } catch (error) {
-      console.error("Erreur lors de la création de la PR:", error);
+      console.error("Error creating PR:", error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Erreur lors de la création de la PR",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error creating PR",
         variant: "destructive",
       });
     } finally {
@@ -120,11 +120,11 @@ export function ReviewJson() {
           
           {/* Section d'authentification GitHub */}
           <div className="rounded-lg border p-4">
-            <h3 className="mb-3 text-sm font-semibold">Authentification GitHub</h3>
+            <h3 className="mb-3 text-sm font-semibold">GitHub Authentication</h3>
             {authLoading ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Vérification de la connexion...</span>
+                <span className="text-sm">Checking connection...</span>
               </div>
             ) : authStatus.authenticated ? (
               <div className="flex items-center justify-between">
@@ -159,21 +159,21 @@ export function ReviewJson() {
                     className="flex items-center gap-2"
                   >
                     <LogOut className="h-4 w-4" />
-                    Déconnexion
+                    Logout
                   </Button>
                 </div>
               </div>
             ) : (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  Connectez-vous avec GitHub pour créer une PR
+                  Connect to GitHub to create a PR
                 </p>
                 <Button
                   onClick={login}
                   className="flex items-center gap-2"
                 >
                   <Github className="h-4 w-4" />
-                  Se connecter
+                  Login
                 </Button>
               </div>
             )}
@@ -192,10 +192,10 @@ export function ReviewJson() {
             {isGeneratingPR ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Génération de la PR...
+                Generating PR...
               </>
             ) : (
-              "Générer une PR"
+              "Generate PR"
             )}
           </Button>
         </div>
