@@ -121,8 +121,65 @@ async function handleOperationCompletion(operation: any, abi: any) {
     ]
   };
 
-  // Préparer le prompt pour OpenAI
-  const prompt = `Here is the ABI of an Ethereum smart contract:\n${typeof abi === 'string' ? abi : JSON.stringify(abi, null, 2)}\n\nHere is the structure of an ERC-7730 operation to complete (some fields are empty or need to be qualified):\n${JSON.stringify(operation, null, 2)}\n\nYour answer must be a valid ERC-7730 operation object, with only the following keys: intent (string), fields (array of objects with label, format, params, path, isRequired, isIncluded), and nothing else. Do not include screens, required, excluded, value, $id, or any other keys. Do not wrap the answer in markdown or code block.\n\nHere are some valid values for the 'format' property: raw, addressName, calldata, amount, tokenAmount, nftName, date, duration, unit, enum. Always choose the most relevant one for each field.\n\nExample of the expected output:\n${JSON.stringify(example, null, 2)}\n\nFor each field, if it is missing, empty, or incomplete, suggest a plausible value based on the ABI and the ERC-7730 standard.\nFor each field, you MUST always fill the 'format' property with a valid and relevant value according to the ABI and the ERC-7730 standard. Do not leave any 'format' property empty, null, or undefined.\nFor dropdown or list fields, always select a valid and relevant option.\nAll fields and their parameters must be fully completed.\nReturn only the final JSON, with no explanation.`;
+  // Préparer le prompt pour OpenAI avec des directives spécifiques ERC-7730
+  const prompt = `Here is the ABI of an Ethereum smart contract:\n${typeof abi === 'string' ? abi : JSON.stringify(abi, null, 2)}\n\nHere is the structure of an ERC-7730 operation to complete (some fields are empty or need to be qualified):\n${JSON.stringify(operation, null, 2)}\n\nYour task is to generate a valid ERC-7730 operation object following these strict guidelines:
+
+## ERC-7730 Field Format Standards:
+
+**Valid Field Formats:**
+- "raw": For unformatted data, hex strings, or when no specific formatting applies
+- "addressName": For Ethereum addresses that should be displayed as human-readable names
+- "calldata": For embedded smart contract calls with parameters
+- "amount": For simple numeric amounts (wei, gas, etc.)
+- "tokenAmount": For token amounts with decimals and ticker symbols
+- "nftName": For NFT token IDs that should display collection and token names
+- "date": For timestamp or block height values
+- "duration": For time duration values
+- "unit": For values with specific units (percentages, ratios, etc.)
+- "enum": For enumerated values that map to human-readable strings
+
+**Address Type Guidelines (for addressName format):**
+- "wallet": Account controlled by the wallet
+- "eoa": Externally Owned Account
+- "contract": Well-known smart contract
+- "token": Well-known ERC-20 token
+- "collection": Well-known NFT collection
+
+**Trusted Sources Guidelines (for addressName format):**
+- "local": Address may be replaced with a local name trusted by user
+- "ens": Address may be replaced with an associated ENS domain
+- "userInput": User can input custom names
+- "addressBook": From user's saved address book
+
+## Field Naming and Intent Guidelines:
+
+**Operation Intent:**
+- Use clear, action-oriented descriptions
+- Include the main action (transfer, mint, approve, etc.)
+- Specify the target if relevant (e.g., "Transfer tokens to recipient")
+- Keep it concise but descriptive
+
+**Field Labels:**
+- Use human-readable, descriptive names
+- Be specific about what the field represents
+- Use consistent terminology (e.g., "Recipient" not "To", "Amount" not "Value")
+- Consider the user's perspective when naming
+
+## Format Selection Logic:
+
+1. **addressName**: Use for any address parameter (to, from, spender, owner, etc.)
+2. **tokenAmount**: Use for token transfers, balances, allowances
+3. **amount**: Use for gas, fees, simple numeric values
+4. **calldata**: Use for complex function calls with embedded parameters
+5. **date**: Use for timestamps, deadlines, expiration dates
+6. **duration**: Use for time periods, lock periods, vesting schedules
+7. **unit**: Use for percentages, ratios, multipliers
+8. **enum**: Use for status fields, types, categories
+9. **raw**: Use as fallback for unknown or complex data types
+
+Your answer must be a valid ERC-7730 operation object with only: intent (string), fields (array of objects with label, format, params, path, isRequired, isIncluded).
+
+Example of the expected output:\n${JSON.stringify(example, null, 2)}\n\nFor each field, analyze the ABI parameter type and name to determine the most appropriate format and parameters. Ensure all format properties are filled with valid ERC-7730 values. Return only the final JSON, with no explanation.`;
 
   // Appel à l'API OpenAI
   const apiKey = process.env.OPENAI_API_KEY;
