@@ -127,7 +127,7 @@ export function AppSidebar() {
         <div className="rounded bg-black/5 p-4">
           <Ledger size={24} className="stroke-white stroke-1" />
         </div>
-        <h1 className="text-base">Clear sign all the things</h1>
+        <h1 className="text-base font-bold">Clear sign all the things</h1>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup title="Contract">
